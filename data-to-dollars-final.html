@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Data to Dollars - Free professional stock analyzer for Indian stocks">
+    <title>Data to Dollars - Stock Analyzer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #ff8c00;
+            --primary-dark: #e67e00;
+            --secondary: #1a1a2e;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f5f5f5;
+            --card: #ffffff;
+            --border: #e0e0e0;
+            --text: #1a1a1a;
+            --text-muted: #666666;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+        
+        /* Navbar */
+        .navbar {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 0;
+            sticky: top 0;
+            z-index: 100;
+        }
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .logo span {
+            color: var(--primary);
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+        
+        /* Search */
+        .search-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--card);
+        }
+        .search-bar button {
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .search-bar button:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Quick Access */
+        .quick-access {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        .quick-btn {
+            padding: 8px 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .quick-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* Stock Header */
+        .stock-header {
+            background: var(--card);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+            display: none;
+        }
+        .stock-header.active {
+            display: block;
+        }
+        .stock-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+        .stock-left {
+            display: flex;
+            gap: 16px;
+            align-items: start;
+        }
+        .stock-logo {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            font-weight: 700;
+        }
+        .stock-info h2 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        .stock-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .stock-right {
+            text-align: right;
+        }
+        .stock-price {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .stock-change {
+            font-size: 13px;
+            color: var(--success);
+            margin-top: 4px;
+        }
+        .stock-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .stock-badge.pass {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+        .stock-badge.fail {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+            background: var(--card);
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0;
+        }
+        .tab {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(255, 140, 0, 0.02);
+        }
+        
+        .tab-content {
+            display: none;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-top: none;
+            padding: 24px;
+            border-radius: 0 0 8px 8px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Metrics */
+        .metrics-section {
+            margin-bottom: 24px;
+        }
+        .metrics-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .metrics-title::before {
+            content: '';
+            width: 3px;
+            height: 14px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .metric-card {
+            background: #fafafa;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .metric-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .metric-value {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .metric-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .badge-pass {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        .badge-fail {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        
+        /* DCF / Analyzer */
+        .analyzer-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .slider-group {
+            margin-bottom: 16px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .slider-helper {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(255, 140, 0, 0.3);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .results-box {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .result-item {
+            margin-bottom: 12px;
+        }
+        .result-item:last-child {
+            margin-bottom: 0;
+        }
+        .result-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .result-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        /* Recommendation */
+        .recommendation {
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--border);
+            background: #fafafa;
+            margin-top: 16px;
+        }
+        .recommendation.buy {
+            border-left-color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        .recommendation.hold {
+            border-left-color: var(--warning);
+            background: rgba(245, 158, 11, 0.05);
+        }
+        .recommendation.skip {
+            border-left-color: var(--danger);
+            background: rgba(239, 68, 68, 0.05);
+        }
+        
+        .rec-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .rec-title {
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .rec-badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+        }
+        .recommendation.buy .rec-badge {
+            background: var(--success);
+        }
+        .recommendation.hold .rec-badge {
+            background: var(--warning);
+        }
+        .recommendation.skip .rec-badge {
+            background: var(--danger);
+        }
+        
+        .rec-reason {
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--text);
+        }
+        
+        .analyze-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: background 0.2s;
+        }
+        .analyze-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Back Button */
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-bottom: 16px;
+            width: fit-content;
+            transition: all 0.2s;
+        }
+        .back-btn:hover {
+            background: #f5f5f5;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-muted);
+        }
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        
+        @media (max-width: 768px) {
+            .analyzer-section {
+                grid-template-columns: 1fr;
+            }
+            .metrics-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .stock-top {
+                flex-direction: column;
+            }
+            .stock-right {
+                text-align: left;
+                margin-top: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="navbar-content">
+            <div class="logo">Data to <span>Dollars</span></div>
+            <div style="font-size: 12px; color: var(--text-muted);">Free Stock Analyzer for India</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Search -->
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search stock (TCS, INFY, RELIANCE, HDFCBANK, WIPRO)">
+            <button onclick="handleSearch()">Search</button>
+        </div>
+
+        <!-- Quick Access -->
+        <div class="quick-access">
+            <button class="quick-btn" onclick="selectStock('TCS')">TCS</button>
+            <button class="quick-btn" onclick="selectStock('INFY')">INFY</button>
+            <button class="quick-btn" onclick="selectStock('RELIANCE')">RELIANCE</button>
+            <button class="quick-btn" onclick="selectStock('HDFCBANK')">HDFC</button>
+            <button class="quick-btn" onclick="selectStock('WIPRO')">WIPRO</button>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-title">Search for a Stock</div>
+            <p>Click quick access or search above to start analyzing</p>
+        </div>
+
+        <!-- Stock Details -->
+        <div id="detailsView" style="display: none;">
+            <button class="back-btn" onclick="goBack()">← Back</button>
+
+            <!-- Stock Header -->
+            <div class="stock-header active">
+                <div class="stock-top">
+                    <div class="stock-left">
+                        <div class="stock-logo" id="stockLogo"></div>
+                        <div class="stock-info">
+                            <h2 id="selectedTicker"></h2>
+                            <p id="selectedName"></p>
+                        </div>
+                    </div>
+                    <div class="stock-right">
+                        <div class="stock-price" id="selectedPrice"></div>
+                        <div class="stock-change">Real Time Price</div>
+                        <div class="stock-badge" id="healthStatus"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('metrics')">📊 Metrics</button>
+                <button class="tab" onclick="switchTab('analyzer')">🎯 Analyzer</button>
+            </div>
+
+            <!-- Metrics Tab -->
+            <div id="metricsTab" class="tab-content active">
+                <div class="metrics-section">
+                    <div class="metrics-title">Screening (Pass/Fail)</div>
+                    <div class="metrics-grid" id="screeningMetrics"></div>
+                </div>
+                <div class="metrics-section">
+                    <div class="metrics-title">Valuation Ratios</div>
+                    <div class="metrics-grid" id="valuationMetrics"></div>
+                </div>
+                <div class="metrics-section">
+                    <div class="metrics-title">Growth & Quality</div>
+                    <div class="metrics-grid" id="growthMetrics"></div>
+                </div>
+                <div class="metrics-section">
+                    <div class="metrics-title">Health Indicators</div>
+                    <div class="metrics-grid" id="healthMetrics"></div>
+                </div>
+            </div>
+
+            <!-- Analyzer Tab -->
+            <div id="analyzerTab" class="tab-content">
+                <div class="analyzer-section">
+                    <div>
+                        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Your Assumptions</h3>
+                        
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Revenue Growth (5Y)</span>
+                                <span id="revGrowthVal">8%</span>
+                            </div>
+                            <div class="slider-helper">Expected annual growth</div>
+                            <input type="range" id="revenueGrowth" min="0" max="40" value="8" step="1" oninput="updateAnalyzer()">
+                        </div>
+
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>FCF Margin</span>
+                                <span id="fcfMarginVal">20%</span>
+                            </div>
+                            <div class="slider-helper">Free cash flow margin</div>
+                            <input type="range" id="fcfMargin" min="5" max="50" value="20" step="1" oninput="updateAnalyzer()">
+                        </div>
+
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Terminal Growth</span>
+                                <span id="termGrowthVal">2.5%</span>
+                            </div>
+                            <div class="slider-helper">Long-term perpetual growth</div>
+                            <input type="range" id="terminalGrowth" min="0" max="10" value="2.5" step="0.5" oninput="updateAnalyzer()">
+                        </div>
+
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Discount Rate</span>
+                                <span id="waccVal">10%</span>
+                            </div>
+                            <div class="slider-helper">Required annual return</div>
+                            <input type="range" id="wacc" min="5" max="20" value="10" step="0.5" oninput="updateAnalyzer()">
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Valuation Result</h3>
+                        
+                        <div class="results-box">
+                            <div class="result-item">
+                                <div class="result-label">YOUR INTRINSIC VALUE</div>
+                                <div class="result-value" id="intrinsicValue">₹0</div>
+                            </div>
+                            <div style="border-top: 1px solid var(--border); margin: 12px 0;"></div>
+                            <div class="result-item">
+                                <div class="result-label">Current Price</div>
+                                <div class="result-value" id="currentPriceDisplay" style="color: var(--text);">₹0</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">Margin of Safety</div>
+                                <div class="result-value" id="marginOfSafety">0%</div>
+                            </div>
+                        </div>
+
+                        <div class="recommendation buy" id="recommendation">
+                            <div class="rec-header">
+                                <div class="rec-title">RECOMMENDATION</div>
+                                <div class="rec-badge" id="recommendationBadge">BUY</div>
+                            </div>
+                            <div class="rec-reason" id="recommendationReason"></div>
+                        </div>
+
+                        <button class="analyze-btn" onclick="saveEstimate()">💾 Save My Estimate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mockStocks = {
+            TCS: { name: 'Tata Consultancy Services', ticker: 'TCS', price: 3845, revenue_ttm: 310000, revenue_5yr_ago: 270000, net_income_ttm: 64000, net_income_5yr_ago: 45000, fcf_ttm: 58000, fcf_5yr_ago: 40000, shares_outstanding: 360, debt: 18000, equity: 420000, gross_profit_margin: 28, roic: 22, dividend_yield: 1.2, acquisitions_5yr: 1500, pe_ttm: 60, ps_ratio: 3.2, pe_5yr: 25, pfcf_ttm: 66, pfcf_5yr: 35, market_cap: 1395000, },
+            INFY: { name: 'Infosys Limited', ticker: 'INFY', price: 1621, revenue_ttm: 262000, revenue_5yr_ago: 235000, net_income_ttm: 48000, net_income_5yr_ago: 40000, fcf_ttm: 42000, fcf_5yr_ago: 35000, shares_outstanding: 366, debt: 15000, equity: 380000, gross_profit_margin: 21, roic: 18, dividend_yield: 1.5, acquisitions_5yr: 2000, pe_ttm: 34, ps_ratio: 2.3, pe_5yr: 18, pfcf_ttm: 38, pfcf_5yr: 22, market_cap: 593000, },
+            RELIANCE: { name: 'Reliance Industries', ticker: 'RELIANCE', price: 1285, revenue_ttm: 650000, revenue_5yr_ago: 600000, net_income_ttm: 68000, net_income_5yr_ago: 55000, fcf_ttm: -5000, fcf_5yr_ago: 8000, shares_outstanding: 546, debt: 380000, equity: 520000, gross_profit_margin: 22, roic: 12, dividend_yield: 1.8, acquisitions_5yr: 8000, pe_ttm: 18, ps_ratio: 1.1, pe_5yr: 16, pfcf_ttm: -157, pfcf_5yr: 85, market_cap: 700000, },
+            HDFCBANK: { name: 'HDFC Bank', ticker: 'HDFCBANK', price: 1712, revenue_ttm: 125000, revenue_5yr_ago: 95000, net_income_ttm: 42000, net_income_5yr_ago: 32000, fcf_ttm: 38000, fcf_5yr_ago: 28000, shares_outstanding: 259, debt: 50000, equity: 250000, gross_profit_margin: 52, roic: 25, dividend_yield: 0.9, acquisitions_5yr: 1000, pe_ttm: 44, ps_ratio: 3.7, pe_5yr: 28, pfcf_ttm: 48, pfcf_5yr: 31, market_cap: 445000, },
+            WIPRO: { name: 'Wipro Limited', ticker: 'WIPRO', price: 485, revenue_ttm: 92000, revenue_5yr_ago: 78000, net_income_ttm: 14000, net_income_5yr_ago: 11000, fcf_ttm: 12000, fcf_5yr_ago: 9000, shares_outstanding: 640, debt: 8000, equity: 85000, gross_profit_margin: 17, roic: 16, dividend_yield: 2.1, acquisitions_5yr: 3500, pe_ttm: 35, ps_ratio: 1.8, pe_5yr: 22, pfcf_ttm: 40, pfcf_5yr: 26, market_cap: 310000, },
+        };
+
+        let selectedStock = null;
+
+        function calculateMetrics(stock) {
+            const netIncome = stock.net_income_ttm;
+            const fcf = stock.fcf_ttm;
+            const revenue = stock.revenue_ttm;
+            const debtEquity = stock.debt / stock.equity;
+            const profitMargin = (netIncome / revenue) * 100;
+            const fcfMargin = (fcf / revenue) * 100;
+            const rev3yrGrowth = ((revenue / stock.revenue_5yr_ago) ** (1/3) - 1) * 100;
+            const fcfConversion = fcf > 0 ? (fcf / netIncome) * 100 : 0;
+            return { netIncome, fcf, revenue, debtEquity, profitMargin, fcfMargin, fcfConversion, rev3yrGrowth, pass: netIncome > 0 && fcf > 0 && debtEquity < 5, };
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value.toUpperCase().trim();
+            if (!query) return;
+            const results = Object.values(mockStocks).filter(stock => stock.ticker.includes(query) || stock.name.toUpperCase().includes(query));
+            if (results.length === 0) {
+                alert('Stock not found. Try: TCS, INFY, RELIANCE, HDFCBANK, WIPRO');
+                return;
+            }
+            selectStock(results[0].ticker);
+        }
+
+        function selectStock(ticker) {
+            selectedStock = mockStocks[ticker];
+            document.getElementById('selectedTicker').textContent = selectedStock.ticker;
+            document.getElementById('selectedName').textContent = selectedStock.name;
+            document.getElementById('selectedPrice').textContent = `₹${selectedStock.price}`;
+            document.getElementById('currentPriceDisplay').textContent = `₹${selectedStock.price}`;
+            document.getElementById('stockLogo').textContent = selectedStock.ticker.charAt(0);
+            
+            displayMetrics();
+            updateAnalyzer();
+            
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('detailsView').style.display = 'block';
+        }
+
+        function displayMetrics() {
+            const m = calculateMetrics(selectedStock);
+            const statusDiv = document.getElementById('healthStatus');
+            statusDiv.textContent = m.pass ? '✓ PASS' : '✗ FAIL';
+            statusDiv.className = `stock-badge ${m.pass ? 'pass' : 'fail'}`;
+
+            document.getElementById('screeningMetrics').innerHTML = `
+                <div class="metric-card"><div class="metric-label">Net Income</div><div class="metric-value">₹${(m.netIncome/1000).toFixed(0)}k <span class="metric-badge badge-pass">✓</span></div></div>
+                <div class="metric-card"><div class="metric-label">Free Cash Flow</div><div class="metric-value">₹${(m.fcf/1000).toFixed(0)}k <span class="metric-badge ${m.fcf > 0 ? 'badge-pass' : 'badge-fail'}">✓</span></div></div>
+                <div class="metric-card"><div class="metric-label">Debt/Equity</div><div class="metric-value">${m.debtEquity.toFixed(2)}x</div></div>
+                <div class="metric-card"><div class="metric-label">Profit Margin</div><div class="metric-value">${m.profitMargin.toFixed(1)}%</div></div>
+            `;
+
+            document.getElementById('valuationMetrics').innerHTML = `
+                <div class="metric-card"><div class="metric-label">P/E Ratio</div><div class="metric-value">${selectedStock.pe_ttm.toFixed(1)}x</div></div>
+                <div class="metric-card"><div class="metric-label">P/S Ratio</div><div class="metric-value">${selectedStock.ps_ratio.toFixed(2)}x</div></div>
+                <div class="metric-card"><div class="metric-label">Price/FCF</div><div class="metric-value">${selectedStock.pfcf_ttm > 0 ? selectedStock.pfcf_ttm.toFixed(0) : 'N/A'}x</div></div>
+                <div class="metric-card"><div class="metric-label">5-Year P/E</div><div class="metric-value">${selectedStock.pe_5yr.toFixed(1)}x</div></div>
+            `;
+
+            document.getElementById('growthMetrics').innerHTML = `
+                <div class="metric-card"><div class="metric-label">Revenue (TTM)</div><div class="metric-value">₹${(selectedStock.revenue_ttm/1000).toFixed(0)}k</div></div>
+                <div class="metric-card"><div class="metric-label">3-Yr Growth</div><div class="metric-value">${m.rev3yrGrowth.toFixed(1)}%</div></div>
+                <div class="metric-card"><div class="metric-label">Gross Margin</div><div class="metric-value">${selectedStock.gross_profit_margin.toFixed(1)}%</div></div>
+                <div class="metric-card"><div class="metric-label">ROIC</div><div class="metric-value">${selectedStock.roic.toFixed(1)}%</div></div>
+                <div class="metric-card"><div class="metric-label">Dividend Yield</div><div class="metric-value">${selectedStock.dividend_yield.toFixed(2)}%</div></div>
+                <div class="metric-card"><div class="metric-label">FCF Conversion</div><div class="metric-value">${m.fcfConversion.toFixed(0)}%</div></div>
+            `;
+
+            document.getElementById('healthMetrics').innerHTML = `
+                <div class="metric-card"><div class="metric-label">Market Cap</div><div class="metric-value">₹${(selectedStock.market_cap/1000).toFixed(0)}k</div></div>
+                <div class="metric-card"><div class="metric-label">Enterprise Value</div><div class="metric-value">₹${(selectedStock.market_cap/1000).toFixed(0)}k</div></div>
+                <div class="metric-card"><div class="metric-label">Shares Out.</div><div class="metric-value">${selectedStock.shares_outstanding}Cr</div></div>
+                <div class="metric-card"><div class="metric-label">5-Yr Acq.</div><div class="metric-value">₹${(selectedStock.acquisitions_5yr/1000).toFixed(0)}k</div></div>
+            `;
+        }
+
+        function updateAnalyzer() {
+            if (!selectedStock) return;
+
+            const revenueGrowth = parseFloat(document.getElementById('revenueGrowth').value);
+            const fcfMargin = parseFloat(document.getElementById('fcfMargin').value);
+            const terminalGrowth = parseFloat(document.getElementById('terminalGrowth').value);
+            const wacc = parseFloat(document.getElementById('wacc').value);
+
+            document.getElementById('revGrowthVal').textContent = revenueGrowth + '%';
+            document.getElementById('fcfMarginVal').textContent = fcfMargin + '%';
+            document.getElementById('termGrowthVal').textContent = terminalGrowth + '%';
+            document.getElementById('waccVal').textContent = wacc + '%';
+
+            const fcf_base = selectedStock.fcf_ttm;
+            const growth_rate = revenueGrowth / 100;
+            const terminal_rate = terminalGrowth / 100;
+            const discount_rate = wacc / 100;
+
+            let pv_fcf_sum = 0;
+            for (let year = 1; year <= 10; year++) {
+                const fcf_projected = fcf_base * Math.pow(1 + growth_rate, year);
+                const pv = fcf_projected / Math.pow(1 + discount_rate, year);
+                pv_fcf_sum += pv;
+            }
+
+            const terminal_fcf = fcf_base * Math.pow(1 + growth_rate, 10) * (1 + terminal_rate);
+            const terminal_value = discount_rate > terminal_rate ? terminal_fcf / (discount_rate - terminal_rate) : terminal_fcf;
+            const pv_terminal = terminal_value / Math.pow(1 + discount_rate, 10);
+
+            const enterprise_value = (pv_fcf_sum + pv_terminal) / 10;
+            const intrinsic_value = enterprise_value / selectedStock.shares_outstanding;
+            const current_price = selectedStock.price;
+            const upside = ((intrinsic_value - current_price) / current_price) * 100;
+
+            document.getElementById('intrinsicValue').textContent = `₹${Math.round(intrinsic_value)}`;
+            document.getElementById('marginOfSafety').textContent = `${upside.toFixed(1)}%`;
+            document.getElementById('marginOfSafety').style.color = upside > 15 ? 'var(--success)' : upside > 0 ? 'var(--warning)' : 'var(--danger)';
+
+            const rec = document.getElementById('recommendation');
+            const badge = document.getElementById('recommendationBadge');
+            const reason = document.getElementById('recommendationReason');
+
+            let recommendation = 'HOLD';
+            let recommendationClass = 'hold';
+            let reasonText = '';
+
+            if (upside > 20) {
+                recommendation = 'BUY';
+                recommendationClass = 'buy';
+                reasonText = `Strong upside of ${upside.toFixed(0)}% with intrinsic value at ₹${Math.round(intrinsic_value)} vs current price ₹${current_price}`;
+            } else if (upside > 5) {
+                recommendation = 'BUY';
+                recommendationClass = 'buy';
+                reasonText = `Moderate upside of ${upside.toFixed(0)}% with acceptable margin of safety`;
+            } else if (upside > -10) {
+                recommendation = 'HOLD';
+                recommendationClass = 'hold';
+                reasonText = `Fairly valued with limited upside. Consider waiting for better entry`;
+            } else {
+                recommendation = 'SKIP';
+                recommendationClass = 'skip';
+                reasonText = `Overvalued by ${Math.abs(upside).toFixed(0)}%. Look for better opportunities`;
+            }
+
+            rec.className = `recommendation ${recommendationClass}`;
+            badge.textContent = recommendation;
+            reason.innerHTML = reasonText;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+
+        function saveEstimate() {
+            alert('✓ Estimate saved!');
+        }
+
+        function goBack() {
+            selectedStock = null;
+            document.getElementById('detailsView').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('searchInput').value = '';
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') handleSearch();
+        });
+    </script>
+</body>
+</html>
