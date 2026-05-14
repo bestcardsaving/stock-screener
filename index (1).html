@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Data to Dollars - Professional DCF Stock Analyzer for Indian Stocks">
+    <title>Data to Dollars - Professional Stock Valuation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #ff8c00;
+            --primary-dark: #e67e00;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f5f5f5;
+            --card: #ffffff;
+            --border: #e0e0e0;
+            --text: #1a1a1a;
+            --text-muted: #666666;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .navbar {
+            background: var(--card);
+            border-bottom: 2px solid var(--primary);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .logo span {
+            color: var(--primary);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+        .search-section {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .search-btn {
+            padding: 12px 28px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .search-btn:hover {
+            background: var(--primary-dark);
+        }
+        .stocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .stock-btn {
+            padding: 10px 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .stock-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 80px 24px;
+            color: var(--text-muted);
+        }
+        .empty-icon { font-size: 48px; margin-bottom: 16px; }
+        .analysis-view { display: none; }
+        .analysis-view.active { display: block; }
+        
+        /* Stock Header */
+        .stock-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+        .stock-left {
+            display: flex;
+            gap: 16px;
+            align-items: start;
+            flex: 1;
+        }
+        .stock-logo {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .stock-info h1 { font-size: 28px; margin-bottom: 4px; }
+        .stock-info p { font-size: 13px; opacity: 0.9; }
+        .stock-price {
+            text-align: right;
+        }
+        .stock-price h2 { font-size: 32px; margin-bottom: 8px; }
+        .price-change { font-size: 14px; }
+        .back-btn {
+            padding: 8px 16px;
+            background: var(--card);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+        
+        /* Two Column Layout */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .panel {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 24px;
+        }
+        .panel h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 8px;
+        }
+        
+        /* Metrics Display */
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .metrics-table th {
+            background: #f5f5f5;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+        .metrics-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .metrics-table tr:hover {
+            background: #fafafa;
+        }
+        .value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        /* 8 Pillars */
+        .pillars-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .pillar {
+            background: #fafafa;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+        }
+        .pillar-name {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .pillar-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        /* Input Section */
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-label {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .slider-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        input[type="range"] {
+            flex: 1;
+            height: 5px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: none;
+        }
+        .slider-value {
+            min-width: 50px;
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        /* Scenarios */
+        .scenarios {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .scenario {
+            background: #fafafa;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .scenario-label { font-size: 11px; color: var(--text-muted); }
+        .scenario-value { font-size: 20px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+        
+        /* Results */
+        .results {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .result-card {
+            background: #fafafa;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .result-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+        .result-value { font-size: 22px; font-weight: 700; color: var(--primary); }
+        
+        /* Recommendation */
+        .recommendation {
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            margin-top: 16px;
+        }
+        .recommendation.buy {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: var(--success);
+        }
+        .recommendation.hold {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning);
+        }
+        .recommendation.sell {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--danger);
+        }
+        .rec-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .rec-title { font-weight: 700; }
+        .rec-badge { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; color: white; }
+        .recommendation.buy .rec-badge { background: var(--success); }
+        .recommendation.hold .rec-badge { background: var(--warning); }
+        .recommendation.sell .rec-badge { background: var(--danger); }
+        
+        @media (max-width: 1024px) {
+            .analysis-grid { grid-template-columns: 1fr; }
+            .stock-header { flex-direction: column; }
+            .stock-right { margin-top: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <div class="logo">Data to <span>Dollars</span></div>
+            <div style="font-size: 12px; color: var(--text-muted);">Professional Stock Valuation Tool</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Search Section -->
+        <div id="searchSection">
+            <div class="search-section">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search stock by name or ticker...">
+                <button class="search-btn" onclick="searchStock()">Search</button>
+            </div>
+
+            <h3 style="font-size: 14px; margin-bottom: 12px; font-weight: 600;">Quick Access</h3>
+            <div class="stocks-grid" id="stocksGrid"></div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loadingDiv" style="display: none;">
+            <p>Loading stock data... ⏳</p>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">📊</div>
+            <h2>Select a Stock to Analyze</h2>
+            <p>Choose from quick access or search for any Indian stock</p>
+        </div>
+
+        <!-- Analysis View -->
+        <div id="analysisView" class="analysis-view">
+            <button class="back-btn" onclick="goBack()">← Back to Search</button>
+
+            <!-- Stock Header -->
+            <div class="stock-header">
+                <div class="stock-left">
+                    <div class="stock-logo" id="stockLogo"></div>
+                    <div class="stock-info">
+                        <h1 id="selectedTicker"></h1>
+                        <p id="selectedName"></p>
+                        <p id="selectedSector" style="margin-top: 4px;"></p>
+                    </div>
+                </div>
+                <div class="stock-price">
+                    <h2 id="selectedPrice"></h2>
+                    <p id="selectedMarketCap"></p>
+                </div>
+            </div>
+
+            <!-- Main Analysis Grid -->
+            <div class="analysis-grid">
+                <!-- LEFT: Financial Data & Pillars -->
+                <div>
+                    <!-- Financial Overview -->
+                    <div class="panel">
+                        <h3>📊 Financial Overview</h3>
+                        <table class="metrics-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>1Y</th>
+                                    <th>5Y</th>
+                                    <th>10Y</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Revenue (Cr)</td>
+                                    <td class="value" id="rev1y"></td>
+                                    <td class="value" id="rev5y"></td>
+                                    <td class="value" id="rev10y"></td>
+                                </tr>
+                                <tr>
+                                    <td>Net Income (Cr)</td>
+                                    <td class="value" id="ni1y"></td>
+                                    <td class="value" id="ni5y"></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>FCF (Cr)</td>
+                                    <td class="value" id="fcf1y"></td>
+                                    <td class="value" id="fcf5y"></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Revenue Growth %</td>
+                                    <td class="value" id="revgr1y"></td>
+                                    <td class="value" id="revgr5y"></td>
+                                    <td class="value" id="revgr10y"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 8 Pillars -->
+                    <div class="panel" style="margin-top: 24px;">
+                        <h3>⭐ 8 Pillars of Valuation</h3>
+                        <div class="pillars-grid">
+                            <div class="pillar">
+                                <div class="pillar-name">Profitability</div>
+                                <div class="pillar-value" id="pillar-profit"></div>
+                            </div>
+                            <div class="pillar">
+                                <div class="pillar-name">ROE</div>
+                                <div class="pillar-value" id="pillar-roe"></div>
+                            </div>
+                            <div class="pillar">
+                                <div class="pillar-name">ROIC</div>
+                                <div class="pillar-value" id="pillar-roic"></div>
+                            </div>
+                            <div class="pillar">
+                                <div class="pillar-name">Growth</div>
+                                <div class="pillar-value" id="pillar-growth"></div>
+                            </div>
+                            <div class="pillar">
+                                <div class="pillar-name">Valuation (P/E)</div>
+                                <div class="pillar-value" id="pillar-pe"></div>
+                            </div>
+                            <div class="pillar">
+                                <div class="pillar-name">FCF Margin</div>
+                                <div class="pillar-value" id="pillar-fcfm"></div>
+                            </div>
+                            <div class="pillar">
+                                <div class="pillar-name">Debt/Equity</div>
+                                <div class="pillar-value" id="pillar-de"></div>
+                            </div>
+                            <div class="pillar">
+                                <div class="pillar-name">Dividend Yield</div>
+                                <div class="pillar-value" id="pillar-div"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: DCF Assumptions & Results -->
+                <div>
+                    <!-- Time Period Selection -->
+                    <div class="panel">
+                        <h3>⏱️ Valuation Period</h3>
+                        <div class="input-group">
+                            <label class="input-label">Years to Project</label>
+                            <select id="yearsSelect" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px;" onchange="updateDCF()">
+                                <option value="5">5 Years</option>
+                                <option value="10" selected>10 Years</option>
+                                <option value="15">15 Years</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Assumptions -->
+                    <div class="panel" style="margin-top: 24px;">
+                        <h3>📈 Your Assumptions (3 Scenarios)</h3>
+                        
+                        <div class="input-group">
+                            <label class="input-label">Revenue Growth %</label>
+                            <div class="slider-container">
+                                <input type="range" id="revGrowth" min="0" max="30" value="10" step="1" oninput="updateDCF()">
+                                <span class="slider-value" id="revGrowthVal">10%</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label">Profit Margin %</label>
+                            <div class="slider-container">
+                                <input type="range" id="profitMargin" min="5" max="40" value="15" step="1" oninput="updateDCF()">
+                                <span class="slider-value" id="profitMarginVal">15%</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label">FCF Margin %</label>
+                            <div class="slider-container">
+                                <input type="range" id="fcfMarginSlider" min="5" max="35" value="15" step="1" oninput="updateDCF()">
+                                <span class="slider-value" id="fcfMarginVal">15%</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label">WACC (Discount Rate) %</label>
+                            <div class="slider-container">
+                                <input type="range" id="wacc" min="5" max="20" value="10" step="0.5" oninput="updateDCF()">
+                                <span class="slider-value" id="waccVal">10%</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label">Terminal Growth %</label>
+                            <div class="slider-container">
+                                <input type="range" id="terminalGrowth" min="0" max="5" value="2.5" step="0.5" oninput="updateDCF()">
+                                <span class="slider-value" id="terminalGrowthVal">2.5%</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label">Desired Annual Return %</label>
+                            <div class="slider-container">
+                                <input type="range" id="desiredReturn" min="5" max="25" value="12" step="1" oninput="updateDCF()">
+                                <span class="slider-value" id="desiredReturnVal">12%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results & Recommendation -->
+                    <div class="panel" style="margin-top: 24px;">
+                        <h3>🎯 DCF Valuation Results</h3>
+                        
+                        <div class="scenarios">
+                            <div class="scenario">
+                                <div class="scenario-label">Bear Case</div>
+                                <div class="scenario-value" id="bearValue">₹0</div>
+                            </div>
+                            <div class="scenario">
+                                <div class="scenario-label">Base Case</div>
+                                <div class="scenario-value" id="baseValue">₹0</div>
+                            </div>
+                            <div class="scenario">
+                                <div class="scenario-label">Bull Case</div>
+                                <div class="scenario-value" id="bullValue">₹0</div>
+                            </div>
+                        </div>
+
+                        <div class="results" style="margin-top: 16px;">
+                            <div class="result-card">
+                                <div class="result-label">Intrinsic Value (Base)</div>
+                                <div class="result-value" id="intrinsicValue">₹0</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">Current Price</div>
+                                <div class="result-value" id="currentPrice">₹0</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">Upside Potential</div>
+                                <div class="result-value" id="upsidePotential">0%</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">Valuation Status</div>
+                                <div class="result-value" id="valuationStatus">--</div>
+                            </div>
+                        </div>
+
+                        <div id="recommendationBox" class="recommendation hold">
+                            <div class="rec-header">
+                                <div class="rec-title">Investment Recommendation</div>
+                                <div class="rec-badge" id="recBadge">HOLD</div>
+                            </div>
+                            <div id="recReason"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stocksData = [];
+        let selectedStock = null;
+
+        // Load stocks data on page load
+        async function loadStocksData() {
+            try {
+                const response = await fetch('stocks-data.json');
+                const data = await response.json();
+                stocksData = data.stocks;
+                displayStocksList();
+            } catch (error) {
+                console.error('Error loading stocks:', error);
+                // Fallback data if JSON fails
+                loadFallbackData();
+            }
+        }
+
+        function loadFallbackData() {
+            stocksData = [
+                { ticker: 'TCS', name: 'Tata Consultancy Services', sector: 'IT', currentPrice: 3845, marketCap: 139500 },
+                { ticker: 'INFY', name: 'Infosys Limited', sector: 'IT', currentPrice: 1621, marketCap: 67200 },
+                { ticker: 'RELIANCE', name: 'Reliance Industries', sector: 'Oil & Gas', currentPrice: 1285, marketCap: 385000 },
+                { ticker: 'HDFCBANK', name: 'HDFC Bank', sector: 'Banking', currentPrice: 1712, marketCap: 224000 },
+                { ticker: 'WIPRO', name: 'Wipro Limited', sector: 'IT', currentPrice: 485, marketCap: 24600 }
+            ];
+            displayStocksList();
+        }
+
+        function displayStocksList() {
+            const grid = document.getElementById('stocksGrid');
+            grid.innerHTML = stocksData.map(stock => 
+                `<button class="stock-btn" onclick="selectStock('${stock.ticker}')">${stock.ticker}</button>`
+            ).join('');
+        }
+
+        function searchStock() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const found = stocksData.find(s => 
+                s.ticker.toLowerCase().includes(query) || 
+                s.name.toLowerCase().includes(query)
+            );
+            if (found) {
+                selectStock(found.ticker);
+            } else {
+                alert('Stock not found');
+            }
+        }
+
+        function selectStock(ticker) {
+            selectedStock = stocksData.find(s => s.ticker === ticker);
+            if (selectedStock) {
+                displayAnalysis();
+                updateDCF();
+            }
+        }
+
+        function displayAnalysis() {
+            const s = selectedStock;
+            
+            document.getElementById('searchSection').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('analysisView').classList.add('active');
+
+            // Header
+            document.getElementById('stockLogo').textContent = s.ticker.charAt(0);
+            document.getElementById('selectedTicker').textContent = s.ticker;
+            document.getElementById('selectedName').textContent = s.name;
+            document.getElementById('selectedSector').textContent = s.sector || 'N/A';
+            document.getElementById('selectedPrice').textContent = `₹${s.currentPrice.toLocaleString()}`;
+            document.getElementById('selectedMarketCap').textContent = `Market Cap: ₹${(s.marketCap / 1000).toFixed(1)}L Cr`;
+
+            // Financial Data
+            document.getElementById('rev1y').textContent = `₹${s.revenue_1y?.toLocaleString() || 'N/A'}`;
+            document.getElementById('rev5y').textContent = `₹${s.revenue_5y?.toLocaleString() || 'N/A'}`;
+            document.getElementById('rev10y').textContent = `₹${s.revenue_10y?.toLocaleString() || 'N/A'}`;
+            document.getElementById('ni1y').textContent = `₹${s.netIncome_1y?.toLocaleString() || 'N/A'}`;
+            document.getElementById('ni5y').textContent = `₹${s.netIncome_5y?.toLocaleString() || 'N/A'}`;
+            document.getElementById('fcf1y').textContent = `₹${s.fcf_1y?.toLocaleString() || 'N/A'}`;
+            document.getElementById('fcf5y').textContent = `₹${s.fcf_5y?.toLocaleString() || 'N/A'}`;
+            document.getElementById('revgr1y').textContent = `${s.revenueGrowth_1y?.toFixed(1) || 'N/A'}%`;
+            document.getElementById('revgr5y').textContent = `${s.revenueGrowth_5y?.toFixed(1) || 'N/A'}%`;
+            document.getElementById('revgr10y').textContent = `${s.revenueGrowth_10y?.toFixed(1) || 'N/A'}%`;
+
+            // 8 Pillars
+            document.getElementById('pillar-profit').textContent = `${s.profitMargin?.toFixed(1) || 'N/A'}%`;
+            document.getElementById('pillar-roe').textContent = `${s.roe?.toFixed(1) || 'N/A'}%`;
+            document.getElementById('pillar-roic').textContent = `${s.roic?.toFixed(1) || 'N/A'}%`;
+            document.getElementById('pillar-growth').textContent = `${s.revenueGrowth_5y?.toFixed(1) || 'N/A'}%`;
+            document.getElementById('pillar-pe').textContent = `${s.peRatio?.toFixed(1) || 'N/A'}x`;
+            document.getElementById('pillar-fcfm').textContent = `${s.fcfMargin?.toFixed(1) || 'N/A'}%`;
+            document.getElementById('pillar-de').textContent = `${s.debtToEquity?.toFixed(2) || 'N/A'}x`;
+            document.getElementById('pillar-div').textContent = `${s.dividendYield?.toFixed(2) || 'N/A'}%`;
+
+            document.getElementById('currentPrice').textContent = `₹${s.currentPrice}`;
+        }
+
+        function updateDCF() {
+            if (!selectedStock) return;
+
+            const s = selectedStock;
+            const revenue = s.revenue_1y || 100000;
+            const shares = s.shares || 300;
+            const yearsToProject = parseInt(document.getElementById('yearsSelect').value);
+            
+            const revGrowth = parseFloat(document.getElementById('revGrowth').value) / 100;
+            const profitMargin = parseFloat(document.getElementById('profitMargin').value) / 100;
+            const fcfMargin = parseFloat(document.getElementById('fcfMarginSlider').value) / 100;
+            const wacc = parseFloat(document.getElementById('wacc').value) / 100;
+            const terminalGrowth = parseFloat(document.getElementById('terminalGrowth').value) / 100;
+
+            // Update display values
+            document.getElementById('revGrowthVal').textContent = document.getElementById('revGrowth').value + '%';
+            document.getElementById('profitMarginVal').textContent = document.getElementById('profitMargin').value + '%';
+            document.getElementById('fcfMarginVal').textContent = document.getElementById('fcfMarginSlider').value + '%';
+            document.getElementById('waccVal').textContent = document.getElementById('wacc').value + '%';
+            document.getElementById('terminalGrowthVal').textContent = document.getElementById('terminalGrowth').value + '%';
+            document.getElementById('desiredReturnVal').textContent = document.getElementById('desiredReturn').value + '%';
+
+            // Calculate DCF
+            let pvFcf = 0;
+            for (let i = 1; i <= yearsToProject; i++) {
+                const projRevenue = revenue * Math.pow(1 + revGrowth, i);
+                const projFcf = projRevenue * fcfMargin;
+                const pv = projFcf / Math.pow(1 + wacc, i);
+                pvFcf += pv;
+            }
+
+            const year10Revenue = revenue * Math.pow(1 + revGrowth, yearsToProject);
+            const terminalFcf = year10Revenue * (1 + terminalGrowth) * fcfMargin;
+            const terminalValue = terminalFcf / (wacc - terminalGrowth);
+            const pvTerminal = terminalValue / Math.pow(1 + wacc, yearsToProject);
+
+            const enterpriseValue = pvFcf + pvTerminal;
+            const intrinsicValue = enterpriseValue / shares;
+
+            // Three scenarios
+            const bearValue = intrinsicValue * 0.8;
+            const baseValue = intrinsicValue;
+            const bullValue = intrinsicValue * 1.2;
+
+            document.getElementById('bearValue').textContent = `₹${Math.round(bearValue)}`;
+            document.getElementById('baseValue').textContent = `₹${Math.round(baseValue)}`;
+            document.getElementById('bullValue').textContent = `₹${Math.round(bullValue)}`;
+            document.getElementById('intrinsicValue').textContent = `₹${Math.round(intrinsicValue)}`;
+
+            const upside = ((intrinsicValue - s.currentPrice) / s.currentPrice) * 100;
+            document.getElementById('upsidePotential').textContent = `${upside.toFixed(1)}%`;
+            document.getElementById('upsidePotential').style.color = upside > 0 ? 'var(--success)' : 'var(--danger)';
+
+            let status = 'Fairly Valued';
+            if (upside > 20) status = 'Undervalued';
+            else if (upside < -20) status = 'Overvalued';
+            document.getElementById('valuationStatus').textContent = status;
+
+            // Recommendation
+            const recBox = document.getElementById('recommendationBox');
+            const recBadge = document.getElementById('recBadge');
+            const recReason = document.getElementById('recReason');
+
+            let rec = 'HOLD';
+            let recClass = 'hold';
+            let reason = '';
+
+            if (upside > 20) {
+                rec = 'BUY';
+                recClass = 'buy';
+                reason = `Strong upside of ${upside.toFixed(0)}%. Intrinsic value ₹${Math.round(intrinsicValue)} vs current ₹${s.currentPrice}. Good margin of safety.`;
+            } else if (upside > 5) {
+                rec = 'BUY';
+                recClass = 'buy';
+                reason = `Moderate upside of ${upside.toFixed(0)}%. Acceptable entry point with reasonable safety margin.`;
+            } else if (upside > -10) {
+                rec = 'HOLD';
+                recClass = 'hold';
+                reason = `Fairly valued. Consider waiting for better entry or hold if already invested.`;
+            } else {
+                rec = 'SELL';
+                recClass = 'sell';
+                reason = `Overvalued by ${Math.abs(upside).toFixed(0)}%. Look for better opportunities at lower prices.`;
+            }
+
+            recBox.className = `recommendation ${recClass}`;
+            recBadge.textContent = rec;
+            recReason.textContent = reason;
+        }
+
+        function goBack() {
+            document.getElementById('searchSection').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('analysisView').classList.remove('active');
+            selectedStock = null;
+        }
+
+        // Load data on page load
+        loadStocksData();
+    </script>
+</body>
+</html>
